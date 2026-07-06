@@ -27,6 +27,16 @@ const fileName = "feedback.jsonl"
 // Append writes rec as one JSON line to dir/feedback.jsonl, creating dir if
 // needed. Append-only by design: annotations are a historical log, never
 // edited in place.
+//
+// Concurrent-writer safety relies entirely on the OS: the file is opened
+// with O_APPEND and the line is written in a single f.Write call, so each
+// call's syscall(s) either fully land or don't race with another process's
+// — true on POSIX-compliant local filesystems as long as the line stays
+// under PIPE_BUF (historically 4096 bytes; a very long transcript could
+// exceed it and risk interleaving). Not guaranteed on network filesystems
+// (e.g. NFS) that don't implement atomic O_APPEND. This process itself has
+// no in-process mutex, so two goroutines calling Append concurrently rely
+// on the same OS guarantee, not additional locking here.
 func Append(dir string, rec Record) error {
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return fmt.Errorf("create feedback dir: %w", err)

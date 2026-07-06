@@ -3,6 +3,7 @@ package secondbrain
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -77,6 +78,28 @@ func TestLoad_SkipsFileMissingRequiredType(t *testing.T) {
 	}
 	if _, err := brain.Get("solid/single-responsibility"); err != nil {
 		t.Errorf("Get() error = %v, want the valid concept to still load", err)
+	}
+}
+
+func TestLoad_RecordsSkippedFilesForCallerVisibility(t *testing.T) {
+	dir := t.TempDir()
+	writeFixture(t, dir, "broken.md", missingTypeConcept)
+	writeFixture(t, dir, "solid/single-responsibility.md", validConcept)
+
+	brain, err := Load(dir)
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+
+	skipped := brain.SkippedFiles()
+	if len(skipped) != 1 {
+		t.Fatalf("SkippedFiles() = %v, want exactly 1 entry", skipped)
+	}
+	if !strings.Contains(skipped[0], "broken.md") {
+		t.Errorf("SkippedFiles()[0] = %q, want it to name broken.md", skipped[0])
+	}
+	if !strings.Contains(skipped[0], "missing required field") {
+		t.Errorf("SkippedFiles()[0] = %q, want it to include the skip reason", skipped[0])
 	}
 }
 

@@ -6,6 +6,8 @@ A **Second Brain orchestration CLI**, built on **Go ADK v2**. A Search agent and
 
 ---
 
+> **Agents:** read [`POLICY.md`](POLICY.md) before this file or `knowledge/` — it's the collaboration policy gate for this repo.
+
 ## 📋 Table of Contents
 
 - [agentic-hooks](#agentic-hooks)
@@ -311,8 +313,23 @@ Task text and any matched Second Brain concept content are sent to the configure
 
 ## 📚 Documentation
 
+Structured per [Diátaxis](https://diataxis.fr/) — tutorials and how-to
+guides for doing things, reference for looking things up, explanation for
+understanding why.
+
+- **Start here**: [docs/tutorials/first-run.md](docs/tutorials/first-run.md) — clone to first approved verdict, one linear path.
+- **How-to guides**: [docs/how-to/](docs/how-to/) — add a concept, point Search at another MCP server, run benchmarks, run the golden-set eval, test with MCP Inspector.
+- **Reference**: [docs/reference/](docs/reference/) — CLI flags, MCP tool schemas, Second Brain frontmatter fields, Makefile targets.
+- **Explanation**: [docs/explanation/](docs/explanation/) — why ADK over Genkit, how the self-correcting loop converges, why HITL is CLI-level, full architecture walkthrough.
+- **Architecture Decision Records**: [docs/adr/](docs/adr/) — locked decisions, one immutable record per decision.
 - [TESTING.md](TESTING.md) — manual/automated testing guide
 - [SESSION_HANDOFF.md](SESSION_HANDOFF.md) — cross-session project context, locked decisions, open items
+- [AGENTS.md](AGENTS.md) — build/test/run commands and conventions, for humans and coding agents alike
+- [SYSTEM.md](SYSTEM.md) — architecture overview and component responsibilities
+- [PRODUCT.md](PRODUCT.md) — what this tool is for and who it's for
+- [PLAN.md](PLAN.md) — current/active roadmap
+- [DESIGN.md](DESIGN.md) — standing design principles
+- [llms.txt](llms.txt) / [llms-full.txt](llms-full.txt) — machine-readable doc index per [llmstxt.org](https://llmstxt.org/)
 - [`docs/superpowers/specs/`](docs/superpowers/specs/) — design specs
 - [`docs/superpowers/plans/`](docs/superpowers/plans/) — implementation plans
 - [`knowledge/`](knowledge/) — the Second Brain content itself

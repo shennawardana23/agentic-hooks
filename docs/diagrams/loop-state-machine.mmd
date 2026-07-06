@@ -1,0 +1,28 @@
+stateDiagram-v2
+    [*] --> Drafting
+
+    Drafting --> Reviewing: Generator produces draft
+
+    Reviewing --> Drafting: CHANGES_REQUESTED\n(Generator sees verdict in\nshared session history)
+    Reviewing --> Done: APPROVE\n(exit_loop sets\nctx.Actions().Escalate = true)
+
+    Drafting --> Done: max-iterations reached\n(best-effort last draft returned,\nloop does not run forever)
+
+    Done --> [*]
+
+    note right of Reviewing
+        loopagent checks
+        event.Actions.Escalate
+        after each full sub-agent
+        pass to decide whether
+        to stop.
+    end note
+
+    note right of Drafting
+        Bounded by --max-iterations
+        (default 4). retryandreflect
+        plugin attached for
+        tool-call self-healing,
+        independent of this
+        convergence bound.
+    end note

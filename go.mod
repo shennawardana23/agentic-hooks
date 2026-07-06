@@ -5,9 +5,9 @@ go 1.25.0
 require (
 	github.com/modelcontextprotocol/go-sdk v1.6.1
 	github.com/spf13/cobra v1.10.2
+	go.yaml.in/yaml/v3 v3.0.4
 	google.golang.org/adk/v2 v2.0.0
-	google.golang.org/genai v1.57.0
-	gopkg.in/yaml.v3 v3.0.1
+	google.golang.org/genai v1.62.0
 )
 
 require (

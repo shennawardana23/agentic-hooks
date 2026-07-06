@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"gopkg.in/yaml.v3"
+	"go.yaml.in/yaml/v3"
 )
 
 type Concept struct {
@@ -24,6 +24,7 @@ type Concept struct {
 
 type Brain struct {
 	concepts []Concept
+	skipped  []string
 }
 
 type frontmatter struct {
@@ -63,6 +64,7 @@ func parseConcept(id, content string) (Concept, error) {
 
 func Load(dir string) (*Brain, error) {
 	var concepts []Concept
+	var skipped []string
 
 	err := filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
@@ -86,6 +88,7 @@ func Load(dir string) (*Brain, error) {
 		concept, err := parseConcept(id, string(data))
 		if err != nil {
 			log.Printf("secondbrain: skipping %s: %v", path, err)
+			skipped = append(skipped, fmt.Sprintf("%s: %v", rel, err))
 			return nil
 		}
 		concepts = append(concepts, concept)
@@ -95,7 +98,15 @@ func Load(dir string) (*Brain, error) {
 		return nil, fmt.Errorf("secondbrain: load %s: %w", dir, err)
 	}
 
-	return &Brain{concepts: concepts}, nil
+	return &Brain{concepts: concepts, skipped: skipped}, nil
+}
+
+// SkippedFiles returns one "path: reason" string per concept file Load
+// couldn't parse. Callers that expose the Brain over a network boundary
+// (e.g. the MCP server's list_knowledge tool) should surface these —
+// log.Printf alone is invisible to a remote caller.
+func (b *Brain) SkippedFiles() []string {
+	return b.skipped
 }
 
 func (b *Brain) List(typeFilter, tagFilter string) []Concept {

@@ -88,6 +88,35 @@ func runRootAgent(ctx context.Context, w io.Writer, root agent.Agent, task strin
 	return result, nil
 }
 
+// promptForApprovalAndRecordFeedback prompts on out/in for a HITL
+// approve/reject decision plus an optional reason, appends the decision to
+// the feedback log, and returns whether it was approved. Approval is
+// fail-closed: anything but a literal "y"/"Y" line counts as reject. A
+// feedback-write failure only warns to out and does not change the
+// returned approval — the human's decision still stands even if the
+// annotation couldn't be persisted.
+func promptForApprovalAndRecordFeedback(out io.Writer, in *bufio.Reader, feedbackDir, task, result string) bool {
+	fmt.Fprintf(out, "\nFinal transcript above. Approve? [y/N]: ")
+	approveLine, _ := in.ReadString('\n')
+	approved := approveLine == "y\n" || approveLine == "Y\n"
+
+	fmt.Fprint(out, "Reason (optional, for the feedback log): ")
+	reasonLine, _ := in.ReadString('\n')
+	reason := strings.TrimSuffix(reasonLine, "\n")
+
+	if err := feedback.Append(feedbackDir, feedback.Record{
+		Timestamp:  time.Now(),
+		Task:       task,
+		Transcript: result,
+		Approved:   approved,
+		Reason:     reason,
+	}); err != nil {
+		fmt.Fprintf(out, "warning: failed to write feedback record: %v\n", err)
+	}
+
+	return approved
+}
+
 func newRunCmd() *cobra.Command {
 	var knowledgeDir string
 	var mcpCommand string
@@ -140,23 +169,7 @@ func newRunCmd() *cobra.Command {
 			}
 
 			reader := bufio.NewReader(os.Stdin)
-			fmt.Fprintf(cmd.OutOrStdout(), "\nFinal transcript above. Approve? [y/N]: ")
-			approveLine, _ := reader.ReadString('\n')
-			approved := approveLine == "y\n" || approveLine == "Y\n"
-
-			fmt.Fprint(cmd.OutOrStdout(), "Reason (optional, for the feedback log): ")
-			reasonLine, _ := reader.ReadString('\n')
-			reason := strings.TrimSuffix(reasonLine, "\n")
-
-			if err := feedback.Append(feedbackDir, feedback.Record{
-				Timestamp:  time.Now(),
-				Task:       task,
-				Transcript: result,
-				Approved:   approved,
-				Reason:     reason,
-			}); err != nil {
-				fmt.Fprintf(cmd.OutOrStdout(), "warning: failed to write feedback record: %v\n", err)
-			}
+			approved := promptForApprovalAndRecordFeedback(cmd.OutOrStdout(), reader, feedbackDir, task, result)
 
 			if !approved {
 				fmt.Fprintln(cmd.OutOrStdout(), "Rejected — no output returned as final.")

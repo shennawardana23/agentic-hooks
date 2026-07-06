@@ -12,6 +12,7 @@ import (
 
 func newServeCmd() *cobra.Command {
 	var knowledgeDir string
+	var policyFile string
 
 	cmd := &cobra.Command{
 		Use:   "serve",
@@ -21,12 +22,13 @@ func newServeCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			server := mcpserver.NewServer(brain)
+			server := mcpserver.NewServer(brain, policyFile)
 			return server.Run(context.Background(), &mcp.StdioTransport{})
 		},
 	}
 
 	cmd.Flags().StringVar(&knowledgeDir, "knowledge-dir", "", "path to the Second Brain knowledge directory (required)")
+	cmd.Flags().StringVar(&policyFile, "policy-file", "POLICY.md", "path to the agent collaboration policy file")
 	cmd.MarkFlagRequired("knowledge-dir")
 
 	return cmd

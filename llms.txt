@@ -1,0 +1,106 @@
+# agentic-hooks
+
+> A Second Brain orchestration CLI built on Go ADK v2. A Search agent and a
+> self-correcting Generator↔Review loop answer a task against a personal
+> knowledge base of engineering principles, gated by a human approve/reject
+> checkpoint. The same knowledge base is exposed as an MCP server so external
+> agent hosts (Claude Code, Cursor, etc.) can query it directly over stdio.
+
+This file follows the [llms.txt](https://llmstxt.org/) convention: a
+Markdown index of every document in this project, organized so an LLM agent
+can decide what to fetch. For the same index with every document's full
+content already inlined, see [llms-full.txt](llms-full.txt).
+
+## Start here
+
+- [AGENTS.md](AGENTS.md): Start-here doc for any agent picking up this repo cold — build/test/run commands, conventions, full doc map.
+- [README.md](README.md): Human-facing project overview, quick start, architecture diagram.
+- [SESSION_HANDOFF.md](SESSION_HANDOFF.md): Cross-session context, locked decisions, open items — read before resuming work.
+
+## Agent collaboration policy
+
+- [POLICY.md](POLICY.md): The collaboration policy index — read before the Second Brain.
+- [CLAUDE.md](CLAUDE.md): Auto-loaded gate summarizing the highest-severity policies.
+- [policies/01-agent-conduct.md](policies/01-agent-conduct.md)
+- [policies/02-session-context-compaction.md](policies/02-session-context-compaction.md)
+- [policies/03-memory-persistence.md](policies/03-memory-persistence.md)
+- [policies/04-caching.md](policies/04-caching.md)
+- [policies/05-persona-by-project.md](policies/05-persona-by-project.md)
+- [policies/06-guardrails-security.md](policies/06-guardrails-security.md)
+- [policies/07-env-secrets-protection.md](policies/07-env-secrets-protection.md)
+- [policies/08-anti-cheating-honesty.md](policies/08-anti-cheating-honesty.md)
+- [policies/09-communication-style.md](policies/09-communication-style.md)
+- [policies/10-escalation-hitl.md](policies/10-escalation-hitl.md)
+
+## Agent-legible root files
+
+- [SYSTEM.md](SYSTEM.md): Architecture overview, component responsibilities, data flow.
+- [MEMORY.md](MEMORY.md): Durable project-level facts and decisions.
+- [SKILL.md](SKILL.md): How Second Brain concepts are authored, tagged, and matched.
+- [PLAN.md](PLAN.md): Current forward-looking roadmap.
+- [DESIGN.md](DESIGN.md): Standing design principles.
+- [PRODUCT.md](PRODUCT.md): What this tool is for, and its two real personas.
+- [APPEND_SYSTEM.md](APPEND_SYSTEM.md): Append-only project changelog.
+
+## Tutorials
+
+- [docs/tutorials/first-run.md](docs/tutorials/first-run.md): Your first run — clone, build, create a Second Brain concept, run the loop, approve a verdict.
+
+## How-to guides
+
+- [docs/how-to/add-a-concept.md](docs/how-to/add-a-concept.md): How to add a Second Brain concept.
+- [docs/how-to/point-search-at-another-mcp-server.md](docs/how-to/point-search-at-another-mcp-server.md): How to point the Search agent at a different MCP server.
+- [docs/how-to/run-benchmarks.md](docs/how-to/run-benchmarks.md): How to run benchmarks.
+- [docs/how-to/run-the-golden-set-eval.md](docs/how-to/run-the-golden-set-eval.md): How to run the golden-set eval.
+- [docs/how-to/test-with-mcp-inspector.md](docs/how-to/test-with-mcp-inspector.md): How to test the MCP server manually with MCP Inspector.
+
+## Reference
+
+- [docs/reference/cli.md](docs/reference/cli.md): Every CLI subcommand and flag.
+- [docs/reference/mcp-tools.md](docs/reference/mcp-tools.md): `list_knowledge` / `get_knowledge` MCP tool schemas.
+- [docs/reference/second-brain-frontmatter.md](docs/reference/second-brain-frontmatter.md): OKF frontmatter fields for `knowledge/*.md`.
+- [docs/reference/makefile-targets.md](docs/reference/makefile-targets.md): Every Makefile target.
+
+## Explanation
+
+- [docs/explanation/why-adk-not-genkit.md](docs/explanation/why-adk-not-genkit.md): Why ADK Go v2, not Genkit, is the runtime.
+- [docs/explanation/self-correcting-loop.md](docs/explanation/self-correcting-loop.md): Why the Generator↔Review loop is built the way it is.
+- [docs/explanation/hitl-design.md](docs/explanation/hitl-design.md): Why HITL is a CLI prompt, not ADK tool-confirmation.
+- [docs/explanation/architecture-overview.md](docs/explanation/architecture-overview.md): Full architecture walkthrough with diagrams.
+
+## Architecture Decision Records
+
+- [docs/adr/0001-adk-go-v2-as-sole-orchestrator.md](docs/adr/0001-adk-go-v2-as-sole-orchestrator.md)
+- [docs/adr/0002-offline-eval-as-plain-go-harness.md](docs/adr/0002-offline-eval-as-plain-go-harness.md)
+- [docs/adr/0003-mcp-sdk-bidirectional-one-library.md](docs/adr/0003-mcp-sdk-bidirectional-one-library.md)
+- [docs/adr/0004-second-brain-as-markdown-not-database.md](docs/adr/0004-second-brain-as-markdown-not-database.md)
+- [docs/adr/0005-hitl-as-cli-prompt-not-tool-confirmation.md](docs/adr/0005-hitl-as-cli-prompt-not-tool-confirmation.md)
+- [docs/adr/0006-gemini-api-key-canonical.md](docs/adr/0006-gemini-api-key-canonical.md)
+- [docs/adr/0007-tree-sitter-deferred.md](docs/adr/0007-tree-sitter-deferred.md)
+- [docs/adr/0008-feedback-log-unconditional-append.md](docs/adr/0008-feedback-log-unconditional-append.md)
+- [docs/adr/0009-self-correcting-loop-via-loopagent.md](docs/adr/0009-self-correcting-loop-via-loopagent.md)
+
+## Diagrams
+
+- [docs/diagrams/architecture-overview.d2](docs/diagrams/architecture-overview.d2) (rendered: [architecture-overview.svg](docs/diagrams/architecture-overview.svg))
+- [docs/diagrams/run-sequence.mmd](docs/diagrams/run-sequence.mmd)
+- [docs/diagrams/serve-sequence.mmd](docs/diagrams/serve-sequence.mmd)
+- [docs/diagrams/loop-state-machine.mmd](docs/diagrams/loop-state-machine.mmd)
+
+## Optional
+
+- [TESTING.md](TESTING.md): 3-tier manual/automated testing guide.
+- [docs/superpowers/specs/](docs/superpowers/specs/): Original design specs (Second Brain orchestration, documentation overhaul).
+- [docs/superpowers/plans/](docs/superpowers/plans/): Implementation plans.
+- [knowledge/](knowledge/): The Second Brain content itself (Markdown, OKF frontmatter).
+
+## Deliberately not covered
+
+Excalidraw and draw.io diagrams were requested but are out of scope this
+pass — neither MCP server is connected in this project's environment, and
+fabricating a tool connection that doesn't exist was rejected in favor of
+Mermaid (inline, GitHub-native) and D2 (rendered to SVG via the local `d2`
+CLI). Revisit if those MCP servers are ever connected. A real historical
+ticket/code-review log is also not included — this repo has no issue
+tracker connected; `APPEND_SYSTEM.md` starts from real dated entries and
+fills going forward.

@@ -1,0 +1,22 @@
+sequenceDiagram
+    participant E as External Agent Host
+    participant M as MCP Server (stdio)
+    participant B as Second Brain
+
+    E->>M: initialize
+    M-->>E: capabilities (tools: list_knowledge, get_knowledge)
+    E->>M: tools/list
+    M-->>E: [list_knowledge, get_knowledge]
+    E->>M: tools/call list_knowledge {tag: "solid"}
+    M->>B: List(type, tag)
+    B-->>M: []Concept
+    M-->>E: {concepts: [...]}
+    E->>M: tools/call get_knowledge {id: "solid/single-responsibility"}
+    M->>B: Get(id)
+    alt concept found
+        B-->>M: Concept
+        M-->>E: {id, title, body}
+    else concept missing
+        B-->>M: error
+        M-->>E: MCP error response (process stays up)
+    end

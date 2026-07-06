@@ -1,0 +1,22 @@
+sequenceDiagram
+    participant U as Human
+    participant R as Root Agent
+    participant G as Generator
+    participant V as Review
+    participant B as Second Brain
+    participant F as feedback.jsonl
+
+    U->>R: run "<task>"
+    R->>G: draft answer
+    G-->>R: draft v1
+    R->>V: review draft v1
+    V->>B: match concepts (title/tag in diff)
+    V-->>R: CHANGES_REQUESTED + reasons
+    R->>G: revise (sees v1 verdict in history)
+    G-->>R: draft v2
+    R->>V: review draft v2
+    V-->>R: APPROVE (exit_loop)
+    R->>U: verdict + Approve? [y/N]
+    U-->>R: y
+    R->>F: append {task, transcript, approved, reason}
+    R->>U: final transcript

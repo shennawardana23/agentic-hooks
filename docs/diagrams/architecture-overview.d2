@@ -1,0 +1,60 @@
+# Architecture Overview — agentic-hooks
+#
+# Static component diagram. Rendered to architecture-overview.svg via:
+#   d2 docs/diagrams/architecture-overview.d2 docs/diagrams/architecture-overview.svg
+#
+# Source of truth for the components shown here: internal/agent,
+# internal/mcpserver, internal/secondbrain, internal/feedback, and
+# cmd/agentic-hooks (run.go, serve.go).
+
+direction: down
+
+cli: CLI Entry Points {
+  shape: rectangle
+  run: "run <task>"
+  serve: "serve"
+}
+
+runtime: ADK Runtime (in-process) {
+  shape: rectangle
+  root: "Root Agent"
+  search: "Search Agent\n(MCP client)"
+  loop: "Generator ⇄ Review\nself-correcting loop"
+  hitl: "HITL Approve/Reject\n(CLI prompt)"
+
+  root -> search: delegates
+  root -> loop: delegates
+  loop -> hitl: verdict
+}
+
+mcpserver: MCP Server (stdio) {
+  shape: rectangle
+  tools: "list_knowledge\nget_knowledge"
+}
+
+secondbrain: Second Brain {
+  shape: cylinder
+  knowledge/*.md
+}
+
+feedback: feedback.jsonl {
+  shape: cylinder
+  "append-only HITL log"
+}
+
+external: External Agent Host\n(Claude Code, Cursor, ...) {
+  shape: person
+}
+
+cli.run -> runtime.root
+cli.serve -> mcpserver.tools
+
+runtime.search -> mcpserver.tools: "mcptoolset\n(MCP client call)" {
+  style.stroke-dash: 3
+}
+runtime.loop -> secondbrain: "secondbrain.Query()\n(direct call)"
+runtime.hitl -> feedback: "append decision"
+
+mcpserver.tools -> secondbrain: "List() / Get()\n(direct call)"
+
+external -> mcpserver.tools: "tools/list, tools/call"

@@ -3,6 +3,11 @@
 How to verify this project actually works, from fastest/cheapest checks to
 a full end-to-end run.
 
+New to the project? [docs/tutorials/first-run.md](docs/tutorials/first-run.md)
+walks the same ground as tier 2/3 below as a guided first run. For driving
+the MCP server manually with MCP Inspector step by step, see
+[docs/how-to/test-with-mcp-inspector.md](docs/how-to/test-with-mcp-inspector.md).
+
 ## 1. Automated test suite (no API key needed)
 
 ```bash

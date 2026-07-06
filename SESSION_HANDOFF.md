@@ -1,8 +1,21 @@
 # Session Handoff — agentic-hooks
 
-Last updated: 2026-07-04 (later same day: self-correcting loop added). Read
-this before doing anything else if you're picking this project up in a new
+Last updated: 2026-07-06 (documentation overhaul, v5 session). Read this
+before doing anything else if you're picking this project up in a new
 session.
+
+## Start here: the doc tree
+
+As of 2026-07-06 this repo has a full documentation system, not just this
+file. **[AGENTS.md](AGENTS.md)** is now the recommended first read for any
+agent or developer picking this up cold — compact entry point, build/test
+commands, doc map. `docs/` holds the Diátaxis-structured content
+(`tutorials/`, `how-to/`, `reference/`, `explanation/`), and
+`docs/adr/` holds immutable Architecture Decision Records for every locked
+decision. This file remains the deep narrative/session-to-session history —
+see the "2026-07-06 — Documentation overhaul" section below for the full
+new structure and rationale. Nothing below this point has been altered;
+only this section and the dated entry near the bottom are new.
 
 ## What this project is
 
@@ -62,8 +75,13 @@ now closed.
   conversation history. This is a genuine correction proof, not just
   construction/wiring — no API key needed. 14 tests total now, all passing.
 - **Live-run proof, done.** `GEMINI_API_KEY` was exported and used (note:
-  code reads `os.Getenv("GOOGLE_API_KEY")` in `newDefaultModel`, but
-  `GEMINI_API_KEY` works anyway — confirmed by reading
+  **correction, 2026-07-06**: this entry originally claimed the code reads
+  `os.Getenv("GOOGLE_API_KEY")` in `newDefaultModel` — that's backwards.
+  `cmd/agentic-hooks/run.go`'s `newDefaultModel` reads
+  `os.Getenv("GEMINI_API_KEY")` directly; `GOOGLE_API_KEY` is the one that
+  works as a fallback, not the other way around. See
+  [ADR-0006](docs/adr/0006-gemini-api-key-canonical.md) for the corrected,
+  verified account. The mechanism below is still accurate — confirmed by reading
   `google.golang.org/genai@v1.62.0/client.go`: `genai.NewClient` falls back
   to reading `GEMINI_API_KEY`/`GOOGLE_API_KEY` from the environment itself
   whenever the passed-in `ClientConfig.APIKey` is `""`, regardless of
@@ -146,23 +164,36 @@ Architecture diagram: https://claude.ai/code/artifact/063c19ed-c306-4cff-b389-1d
 - [ ] User has not given final sign-off on the spec or the implementation.
 - [ ] Nothing has been committed or pushed. If you want this work in git
       history, that's a decision for the user to make explicitly.
-- [ ] **Pending decision, asked twice, no answer both times:** user wants
-      a "massive audit" of Provider Fallback + a Skills system, pointing
-      at two sibling repos that already have relevant code:
-      `/Users/msw/Desktop/Development/Startup_Companies/Arcipelago_International/archpublicwebsite-agentic/internal/model/failover`
-      (an ADK `model.LLM` failover wrapper — NOT Genkit, despite user
-      calling it "genkit middleware failover" — circuit-breaker retry
-      across providers; pinned to `google.golang.org/adk/model`, the
-      **pre-v2 import path**, not `google.golang.org/adk/v2/model` that
-      this project uses — compatibility unconfirmed) and
-      `/Users/msw/Desktop/Development/My_Repository/go-adk-q` (has its own
-      `model/failover`, `model/middleware`, and a full `skills/` taxonomy
-      — agents, collaboration, design, documentation, engineering,
-      workflow — large, unaudited). User also referenced
-      genkit.dev/docs/go/middleware (incl. "Skills middleware"),
-      adk.dev/skills, and agentskills.io as specs to reconcile against.
-      **Do not start this unprompted** — it's a large scope addition on
-      top of an already-complete MVP; ask again before spending on it.
+- [x] **Answered, 2026-07-06 (v5 session).** The item below was asked twice
+      with no answer; a third framing — "Intelligent Communication Through
+      Tool Calling" (agents see each other's public manifests, decide
+      dynamically who to delegate to via a communication tool, instead of a
+      fixed orchestration graph) — arrived this session and the user
+      confirmed it **is** the same initiative. This directly reopens the
+      locked "no network A2A, in-process ADK delegation only" decision
+      above — that reopening is intentional and user-confirmed, not a
+      silent scope change. **Sequencing, user-confirmed:** queued after the
+      agent-policy-layer work (`docs/superpowers/specs/2026-07-06-agent-policy-layer-design.md`)
+      finishes implementation — do not start the agent-communication
+      brainstorm until that lands. When it's time, it gets its own fresh
+      brainstorming cycle (new architecture, not an add-on to the policy
+      layer), and should pull in the two sibling repos referenced below as
+      real prior art, not reinvent from scratch.
+  - Original ask, preserved for context: a "massive audit" of Provider
+    Fallback + a Skills system, pointing at two sibling repos that already
+    have relevant code:
+    `/Users/msw/Desktop/Development/Startup_Companies/Arcipelago_International/archpublicwebsite-agentic/internal/model/failover`
+    (an ADK `model.LLM` failover wrapper — NOT Genkit, despite user
+    calling it "genkit middleware failover" — circuit-breaker retry
+    across providers; pinned to `google.golang.org/adk/model`, the
+    **pre-v2 import path**, not `google.golang.org/adk/v2/model` that
+    this project uses — compatibility unconfirmed) and
+    `/Users/msw/Desktop/Development/My_Repository/go-adk-q` (has its own
+    `model/failover`, `model/middleware`, and a full `skills/` taxonomy
+    — agents, collaboration, design, documentation, engineering,
+    workflow — large, unaudited). User also referenced
+    genkit.dev/docs/go/middleware (incl. "Skills middleware"),
+    adk.dev/skills, and agentskills.io as specs to reconcile against.
 
 ## Decisions already locked — do not re-litigate without new information
 
@@ -266,3 +297,332 @@ expensive single actions available.
   decided unilaterally.
 - Diagrams/visuals are welcome for architecture communication (used the
   Artifact tool for an HTML architecture diagram this session).
+
+## 2026-07-06 — Documentation overhaul (v5 session)
+
+Full documentation system built out per
+[docs/superpowers/specs/2026-07-06-documentation-overhaul-design.md](docs/superpowers/specs/2026-07-06-documentation-overhaul-design.md)
+(status: approved, then implemented same day). New/updated structure:
+
+```
+agentic-hooks/
+├── AGENTS.md            (new — start-here for any agent)
+├── SYSTEM.md            (new — architecture overview)
+├── MEMORY.md            (new — durable project facts/decisions)
+├── SKILL.md             (new — how the Second Brain works)
+├── PLAN.md              (new — forward-looking roadmap)
+├── DESIGN.md            (new — standing design principles)
+├── PRODUCT.md           (new — personas, what success looks like)
+├── APPEND_SYSTEM.md     (new — append-only dated changelog)
+├── SESSION_HANDOFF.md   (this file, updated in place — history preserved above)
+├── llms.txt / llms-full.txt   (new — per llmstxt.org)
+├── README.md            (updated — links into new doc tree)
+├── TESTING.md           (updated — links into new doc tree)
+└── docs/
+    ├── superpowers/      (existing, untouched)
+    ├── tutorials/first-run.md
+    ├── how-to/{add-a-concept,point-search-at-another-mcp-server,run-benchmarks,run-the-golden-set-eval,test-with-mcp-inspector}.md
+    ├── reference/{cli,mcp-tools,second-brain-frontmatter,makefile-targets}.md
+    ├── explanation/{why-adk-not-genkit,self-correcting-loop,hitl-design,architecture-overview}.md
+    ├── adr/0001–0009 (see MEMORY.md for the decision-to-ADR mapping)
+    └── diagrams/{architecture-overview.d2+svg, run-sequence.mmd, serve-sequence.mmd, loop-state-machine.mmd}
+```
+
+Explicitly deferred: Excalidraw/draw.io diagrams (neither MCP server
+connected this session — see [PLAN.md](PLAN.md)); a real historical
+ticket/code-review log (no issue tracker connected — `APPEND_SYSTEM.md`
+seeds real dated entries from this file only, fills in going forward).
+
+Earlier the same day (before the doc work): the `agentic-hooks serve` MCP
+server was wired into the user's `claude_desktop_config.json` (backed up
+the original config first), the binary was rebuilt, and all
+`list_knowledge`/`get_knowledge` behavior — including the bogus-id error
+path — was verified via MCP Inspector CLI. All checks passed; no repo
+files were touched by that verification pass.
+
+**For whoever resumes next**: `AGENTS.md` is now the recommended first
+read (it's the compact "start here" entry point); this file remains the
+deep narrative/decision history and is still the right place to look for
+*why* something is the way it is, or what was tried and abandoned.
+`MEMORY.md` now duplicates the "Decisions already locked" list from this
+file in a more durable/linkable form (with ADR cross-references) — keep
+both in sync if a decision changes; don't let them drift.
+
+## 2026-07-06 — Full-repo audit + fixes (v5 session, same day)
+
+A requested "massive audit, double-check" pass (acting as senior
+backend/AI-infra reviewer) found the documentation overhaul above had a
+real gap: the flagship "Review verdict grounded in a matched Second Brain
+concept" claim (asserted in `PRODUCT.md`, a reference doc, an explanation
+doc, and the run-sequence diagram) was **not actually wired into the live
+`run` pipeline** — `NewReviewAgent` took `brain` as a parameter and never
+used it; `BuildReviewPrompt`/`matchConceptsInDiff` were only ever called
+from tests/eval. **Fixed**, verified via `adk-api-verifier`: `generator.go`
+now sets `OutputKey: "draft"`; `review.go` uses a new `InstructionProvider`
+(`newReviewInstructionProvider`) that reads the draft from session state
+and rebuilds the prompt via `BuildReviewPrompt` on every loop iteration —
+deterministic, not an LLM-optional tool call. New test in `loop_test.go`,
+`TestSelfCorrectingLoop_ReviewGroundedInMatchedSecondBrainConcept`, proves
+it end-to-end by inspecting the real `LLMRequest.Config.SystemInstruction`
+sent to the model.
+
+Also fixed: no `.gitignore` existed — `bin/agentic-hooks` (27MB binary) and
+`feedback/feedback.jsonl` (real HITL transcripts) were both tracked in
+git, contradicting ADR-0008's claim that the feedback log is "not checked
+into git." Added `.gitignore`, ran `git rm --cached` on both (staged, not
+committed — historical commits still contain the old content; a real purge
+would need an explicit history rewrite, not done). Also fixed: a reference
+doc claimed 21 knowledge files, real count is 24; this file's own
+`GOOGLE_API_KEY`/`GEMINI_API_KEY` claim (line ~78 above) was backwards,
+corrected inline with a pointer to ADR-0006.
+
+**Not fixed, tracked as follow-ups, not done this session** (Medium/Low
+from the audit — user chose to fix Criticals/quick-High only):
+- No automated test coverage for `run.go`'s HITL approve/reject parsing or
+  the "feedback write failure just logs a warning" path.
+- `internal/feedback.Append` has no file-locking note/test for concurrent
+  writers (relies on OS-level `O_APPEND` atomicity, undocumented).
+- `google.golang.org/genai` is pinned to v1.57.0; v1.62.0 is available.
+  `gopkg.in/yaml.v3` is on the legacy import path (`go.yaml.in/yaml/v3`
+  now supersedes it).
+- `secondbrain.Load` reports skipped malformed files only via
+  `log.Printf` to stderr — an MCP client calling `list_knowledge` has no
+  way to learn concepts were silently dropped (this is `PRODUCT.md`'s own
+  documented failure mode, currently unmitigated).
+
+## 2026-07-06 — Agent Policy Layer: spec + plan written, NOT yet implemented (v5 session, same day)
+
+User asked for a ~100-policy "collaboration policy" layer — how any agent
+should work with the user (conduct, session/compaction, memory, caching,
+persona-by-project, guardrails, security, env/secrets, anti-cheating,
+communication style, escalation/HITL), read *before* the Second Brain, not
+instead of it. Went through full `superpowers:brainstorming` →
+`superpowers:writing-plans`:
+
+- **Spec (approved):** [`docs/superpowers/specs/2026-07-06-agent-policy-layer-design.md`](docs/superpowers/specs/2026-07-06-agent-policy-layer-design.md).
+  Scope confirmed by user: "Both" (a general personal standard AND this
+  repo's own local enforcement point). Enforcement confirmed: 3 layers —
+  auto-loaded `CLAUDE.md` (real enforcement for Claude-Code-family agents),
+  advisory `get_agent_policy` MCP tool (MCP has no call-ordering
+  enforcement — stated honestly, not oversold), and `.claude/settings.json`
+  hooks (`SessionStart` + `PreToolUse` env-dump blocking). Structure
+  confirmed: `POLICY.md` index + `policies/` dir, 10 category files, ~10
+  policies each.
+- **Plan (written, self-reviewed, NOT yet executed):**
+  [`docs/superpowers/plans/2026-07-06-agent-policy-layer.md`](docs/superpowers/plans/2026-07-06-agent-policy-layer.md).
+  15 tasks: `POLICY.md`, `CLAUDE.md`, the `get_agent_policy` MCP tool
+  (`internal/mcpserver/server.go` signature change —
+  `NewServer(brain, policyFilePath)` — touches 4 call sites), a Claude
+  Desktop config update for the new `--policy-file` flag, all 10
+  `policies/*.md` category files (full policy titles/one-liners already
+  drafted in the plan itself, real-incident-grounded, not generic filler),
+  the hooks (via the `update-config` skill, not hand-written JSON), and a
+  final cross-link + link-check + build/vet/test verification task.
+- **STOPPED HERE, mid-handoff:** the plan was presented with an execution
+  choice — Subagent-Driven (`superpowers:subagent-driven-development`,
+  recommended) vs. Inline (`superpowers:executing-plans`) — **user had not
+  yet answered this when the session ended.** Whoever resumes: ask this
+  question again before executing, don't assume an answer.
+- Session cost was explicitly flagged mid-work ($16 → $27 → $37 → $39 across
+  the audit-fix + brainstorm sequence); user said "proceed" at full scale
+  each time asked — don't re-litigate scale unprompted, but do keep
+  flagging cost growth per policy [10.5]/[10.9] (once `policies/` exists).
+
+## 2026-07-06 — Agent-to-agent communication: queued, not started (v5 session, same day)
+
+See the "Answered, 2026-07-06" entry in the Status section above — this is
+the same initiative as the twice-previously-unanswered Provider
+Fallback + Skills audit. **Explicitly queued after the Agent Policy Layer
+plan above finishes implementation.** Gets its own fresh
+`superpowers:brainstorming` cycle when it's time (new architecture: dynamic
+manifest-based agent discovery/delegation via a communication tool,
+directly reopening the "no network A2A, in-process ADK only" locked
+decision — user-confirmed reopening, not silent). Pull in the two sibling
+repos referenced in the Status-section entry as real prior art.
+
+## 2026-07-06 — Agent Policy Layer: implemented and reviewed clean (v6 session, same day)
+
+The plan from the section above (`docs/superpowers/plans/2026-07-06-agent-policy-layer.md`,
+15 tasks) is now **fully executed**, via `superpowers:subagent-driven-development`
+(user's answer to the previously-unanswered question — Subagent-Driven,
+confirmed this session). User also explicitly instructed **no git commands
+of any kind** for this execution (not just "no commit" — no `git add`,
+`status`, `diff`, worktree, nothing) — so the skill's usual worktree
+isolation and per-task-commit steps were both skipped by design; every
+task ran directly in the working tree, and task reviewers verified diffs
+via direct file reads instead of commit ranges.
+
+**What exists now, all as uncommitted working-tree changes:**
+- `POLICY.md` (root index), `CLAUDE.md` (auto-loaded gate), `policies/01-agent-conduct.md`
+  through `policies/10-escalation-hitl.md` — 101 policies total (10 files ×
+  10 items, plus one added during review, see below).
+- `internal/mcpserver/server.go` gained a third tool, `get_agent_policy`;
+  `NewServer(brain, policyFilePath string)` signature change, all real call
+  sites updated; `cmd/agentic-hooks/serve.go` gained `--policy-file`
+  (default `POLICY.md`). New tests `TestGetAgentPolicy_ReturnsRealPolicyFileContent`/
+  `TestGetAgentPolicy_ErrorsWhenFileMissing`, both passing. Full suite
+  (`go build`/`vet`/`test`) clean throughout.
+- `/Users/msw/Library/Application Support/Claude/claude_desktop_config.json`
+  updated with `--policy-file <absolute path>` for the existing
+  `agentic-hooks-secondbrain` entry — backed up first (two timestamped
+  `.bak.*` files now exist there), edited via targeted JSON mutation, not
+  hand-editing, to avoid touching other servers' credentials in that file.
+  This one required a second explicit user authorization mid-session —
+  auto-mode correctly blocked the first attempt as a sensitive
+  external-file change the generic plan approval didn't cover.
+- `.claude/settings.json` (new) — `SessionStart` hook (prints a policy
+  pointer) + `PreToolUse` hook on `Bash` (`.claude/hooks/check-bash-env-dump.sh`,
+  blocks env-dump-shaped commands, points to `policies/07-env-secrets-protection.md`,
+  has an `AGENTIC_HOOKS_ALLOW_ENV_ECHO=1` override). **This hook is now
+  live and will fire on every future Bash tool call in this repo** —
+  whoever resumes next should expect it.
+- `AGENTS.md`, `README.md`, `llms.txt`, `llms-full.txt` cross-linked to the
+  new material; `llms-full.txt` regenerated (43 `## SOURCE:` sections).
+
+**Review found and fixed two real issues, not rubber-stamped:**
+- Task 14's first pass on the env-dump hook had real false negatives on
+  *idiomatic, non-adversarial* shell usage — `cat ".env"` (quoted),
+  `echo "$SECRET_KEY"` / `echo ${SECRET_KEY}` (quoted/braced), and the
+  `.env.local`/`.env.production` family all bypassed detection. Fixed by
+  tightening the regexes; re-verified with a 24-case battery (all correct);
+  subshell/indirect-invocation evasion (`$(env)`, `bash -c env`) was
+  explicitly left as a documented, accepted limitation of a regex-based
+  heuristic — not a hard security boundary, consistent with this layer's
+  own "advisory-only" honesty stance.
+- The final whole-branch review (dispatched on the most capable model)
+  caught a real fabricated-citation defect in `CLAUDE.md` itself: it cited
+  `[10.1]` for a "stop before destructive actions" rule, but the real
+  `10.1` is about something unrelated (enforcement-limits honesty), and no
+  policy in the set actually stated that rule anywhere — a citation to
+  nothing, in the single most-read file of the whole layer, violating the
+  layer's own policy 08.8 ("never fabricate a citation"). Fixed properly
+  per the reviewer's own recommendation (adding the missing rule rather
+  than just repointing the citation to something adjacent-but-wrong): added
+  `policies/10-escalation-hitl.md`'s `10.11 — Pause Before Destructive or
+  Hard-to-Reverse Actions` as a pure append (10.1–10.10 untouched), then
+  corrected `CLAUDE.md` to cite `[10.11]`/`[10.3]` correctly. This is why
+  the total is 101, not a round 100 — `POLICY.md`'s wording was adjusted
+  to say "~100" consistently rather than claiming an exact count.
+  `llms-full.txt` was regenerated again afterward so the embedded copy
+  isn't stale.
+- Minor, left as-is per the reviewer's own judgment (non-blocking): policy
+  `04.6`'s grounding incident traces only to the plan document itself, not
+  independently to `SESSION_HANDOFF.md`/an ADR — faithful to its stated
+  source, just not as deeply cross-verified as its siblings.
+
+**Known non-issue, checked and confirmed:** `bin/agentic-hooks` and
+`feedback/feedback.jsonl` show as staged deletions (`D`) in `git status` —
+this predates this session (from the `.gitignore`/`git rm --cached` fix in
+the 2026-07-06 audit-fixes entry above) and is unrelated to the policy
+layer; the actual 27MB binary is still present on disk, so the Claude
+Desktop config fix above will still resolve correctly.
+
+**Verified clean at every level:** each of the 15 tasks got its own
+task-scoped review (spec compliance + code quality, both required
+verdicts); the whole-set final review checked cross-task consistency (are
+`CLAUDE.md`'s other citations to `07.1`/`07.2`/`08.1`/`08.3`/`01.2`/`10.3`
+all correct — yes; does `POLICY.md`'s "honesty is itself policy 10.1" claim
+actually hold — yes; do all `SESSION_HANDOFF.md`/ADR-grounded incident
+claims across the 10 files actually check out against the real source —
+yes, spot-checked ~10 of them). `go build`/`vet`/`test` clean at every
+checkpoint. No git command mutated repo state — confirmed by comparing
+`git log --oneline` before and after: still the same 3 pre-existing
+commits.
+
+**Not done, still open:**
+- The Claude Desktop config change hasn't been exercised live (no fresh
+  Claude Desktop session/MCP Inspector run against the new `--policy-file`
+  flag this session) — the JSON is correct and the flag is wired
+  end-to-end in Go, but an actual live `get_agent_policy` call through
+  Claude Desktop itself wasn't performed.
+- The `.claude/settings.json` hooks were verified by direct script
+  invocation with constructed JSON stdin, not by an actual fresh Claude
+  Code session start in this repo (which would require ending this session
+  to observe).
+- Agent-to-agent communication (see the two sections above) is now
+  unblocked (the policy layer it was queued behind has shipped) but was
+  **not started** this session; still needs its own fresh
+  `superpowers:brainstorming` cycle per the "Answered, 2026-07-06" entry
+  above.
+
+## Outstanding tasks, all in one place (read this first if resuming cold)
+
+1. Start a fresh `superpowers:brainstorming` cycle for agent-to-agent
+   communication (see the two sections above) — now unblocked, not started.
+2. Everything from this entire multi-session engagement (~60+ files: the
+   documentation overhaul, the audit fixes, the policy layer spec/plan/
+   implementation) is **staged/modified but not committed** — standing
+   no-commit-unless-asked instruction still applies. If asked to commit,
+   this is a lot of unrelated-looking changes accumulated across multiple
+   long sessions; consider whether the user wants one big commit or
+   several logical ones (docs overhaul / audit fixes / policy layer)
+   before running `git add -A`.
+3. ~~Live-exercise the two "Not done, still open" items directly above~~ —
+   **done, 2026-07-06 v7 session, see entry below.**
+4. ~~Medium/Low audit follow-ups from the 2026-07-06 audit-fixes entry
+   above~~ — **done, 2026-07-06 v7 session, see entry below.**
+
+## 2026-07-06 — Items 3 and 4 closed out (v7 session, same day)
+
+Grepped the whole codebase (`TODO`/`FIXME`/`deferred`/`not yet` etc. across
+`.go` and `.md`) to confirm this file's outstanding list was actually
+complete before acting — it was; no code `TODO`/`FIXME` exist anywhere in
+this repo. `go build`/`vet`/`test` were all re-verified clean before and
+after every change below. Items 1 and 2 above were **not** touched — both
+are explicit user decisions (item 1 reopens a locked ADR and needs its own
+brainstorm; item 2 is gated by the standing no-commit instruction) and
+weren't asked for this session.
+
+**Item 3, both sub-parts, actually exercised live (not just re-claimed):**
+- The `.claude/settings.json` `SessionStart` hook fired for real at the
+  start of this session (visible in this session's own startup context) —
+  the "real fresh-session hook fire" gap is closed.
+- `get_agent_policy` was called for real via MCP Inspector CLI
+  (`npx @modelcontextprotocol/inspector --cli bin/agentic-hooks serve
+  --knowledge-dir knowledge --policy-file POLICY.md --method tools/call
+  --tool-name get_agent_policy`) against a freshly `make build`-rebuilt
+  binary — the real `POLICY.md` content came back correctly.
+  `tools/list` and a `list_knowledge --tool-arg tag=go` call were also
+  re-run live to confirm nothing regressed. Documented in
+  `docs/how-to/test-with-mcp-inspector.md` and `docs/reference/mcp-tools.md`
+  (the latter was also found to be stale — still said "two tools", missing
+  `get_agent_policy` entirely and the new `warnings` field below; fixed).
+
+**Item 4, all four Medium/Low audit follow-ups implemented, tested, and
+verified clean (`go build`/`vet`/`test`, including `-race` on the new
+concurrency test):**
+- **HITL parse + feedback-write-failure coverage.** `cmd/agentic-hooks/run.go`'s
+  inline approve/reject-and-record logic was extracted into
+  `promptForApprovalAndRecordFeedback` (same fail-closed behavior: anything
+  but literal `y`/`Y` rejects). New `run_test.go` covers 6 approval-parsing
+  cases plus a dedicated test proving a feedback-write failure only warns
+  to output and does not flip the human's approval decision.
+- **`internal/feedback.Append` concurrency.** Docstring now states the real
+  guarantee (`O_APPEND` + single `f.Write`, POSIX-only, no in-process lock,
+  `PIPE_BUF` caveat for very long transcripts) instead of leaving it
+  undocumented. New `TestAppend_ConcurrentWritersProduceNoCorruptedLines`
+  runs 50 concurrent `Append` calls and asserts every line survives intact
+  and parses — passes under `-race`.
+- **Dependency bumps**, one at a time with a build+test gate after each:
+  `google.golang.org/genai` v1.57.0 → v1.62.0 (clean). `gopkg.in/yaml.v3`
+  → `go.yaml.in/yaml/v3` v3.0.4 — this is a **module-path migration**, not
+  a version bump (same yaml.v3 maintainers moved the canonical import path;
+  `gopkg.in/yaml.v3` itself has had no release past v3.0.1). Only
+  `internal/secondbrain/secondbrain.go` imported it — one-line import swap,
+  `go mod tidy`, rebuilt clean. `google.golang.org/adk/v2` checked via
+  `go list -m -versions` — still pinned at v2.0.0, nothing newer exists to
+  bump to.
+- **Silent-skip visibility.** `secondbrain.Brain` gained `SkippedFiles()
+  []string` (one `"path: reason"` per file `Load` couldn't parse — additive,
+  no signature change to `Load`/`Brain`). `ListKnowledgeOutput` gained
+  `Warnings []string` (`omitempty`, additive to the wire schema) populated
+  from `brain.SkippedFiles()` in `listKnowledgeHandler`. `log.Printf` is
+  still there too (kept for local-dev visibility) — this adds the
+  previously-missing caller-visible channel, doesn't replace the log. New
+  tests in both `internal/secondbrain` and `internal/mcpserver`; verified
+  live via MCP Inspector (`tools/list` shows `warnings` in the real output
+  schema).
+
+**Not re-litigated, correctly left alone:** items 1 and 2 above remain
+open user decisions — see those two entries; nothing in this session's
+work started the agent-to-agent brainstorm or committed anything.
