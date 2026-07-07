@@ -59,3 +59,68 @@ func TestPromptForApprovalAndRecordFeedback_WarnsOnFeedbackWriteFailureButKeepsA
 		t.Errorf("output = %q, want a warning about the failed feedback write", out.String())
 	}
 }
+
+func TestLoadAgentTools_EmptyPathIsNoOp(t *testing.T) {
+	out := &bytes.Buffer{}
+	tools, err := loadAgentTools("", out)
+	if err != nil {
+		t.Fatalf("loadAgentTools(\"\") error = %v", err)
+	}
+	if tools != nil {
+		t.Errorf("loadAgentTools(\"\") tools = %v, want nil", tools)
+	}
+	if out.String() != "" {
+		t.Errorf("loadAgentTools(\"\") wrote output %q, want none", out.String())
+	}
+}
+
+func TestLoadAgentTools_MissingFileReturnsError(t *testing.T) {
+	out := &bytes.Buffer{}
+	_, err := loadAgentTools(filepath.Join(t.TempDir(), "nope.yaml"), out)
+	if err == nil {
+		t.Fatal("loadAgentTools() error = nil, want non-nil for a missing file")
+	}
+}
+
+func TestLoadAgentTools_ValidRegistryReturnsTools(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "agents.yaml")
+	content := "- name: example-agent\n  description: An example.\n  card_url: http://localhost:9003\n"
+	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
+		t.Fatalf("WriteFile() error = %v", err)
+	}
+
+	out := &bytes.Buffer{}
+	tools, err := loadAgentTools(path, out)
+	if err != nil {
+		t.Fatalf("loadAgentTools() error = %v", err)
+	}
+	if len(tools) != 1 {
+		t.Fatalf("len(tools) = %d, want 1", len(tools))
+	}
+	if out.String() != "" {
+		t.Errorf("loadAgentTools() wrote output %q, want none (no warnings expected)", out.String())
+	}
+}
+
+func TestLoadAgentTools_WarnsOnInvalidEntryButReturnsToolsForRest(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "agents.yaml")
+	content := "- name: \"\"\n  description: missing name\n  card_url: http://localhost:9003\n" +
+		"- name: valid-agent\n  description: fine\n  card_url: http://localhost:9004\n"
+	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
+		t.Fatalf("WriteFile() error = %v", err)
+	}
+
+	out := &bytes.Buffer{}
+	tools, err := loadAgentTools(path, out)
+	if err != nil {
+		t.Fatalf("loadAgentTools() error = %v", err)
+	}
+	if len(tools) != 1 {
+		t.Fatalf("len(tools) = %d, want 1 (only the valid entry)", len(tools))
+	}
+	if !strings.Contains(out.String(), "warning:") {
+		t.Errorf("output = %q, want a warning about the skipped entry", out.String())
+	}
+}

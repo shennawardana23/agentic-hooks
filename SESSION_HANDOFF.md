@@ -547,8 +547,10 @@ commits.
 
 ## Outstanding tasks, all in one place (read this first if resuming cold)
 
-1. Start a fresh `superpowers:brainstorming` cycle for agent-to-agent
-   communication (see the two sections above) — now unblocked, not started.
+1. ~~Start a fresh `superpowers:brainstorming` cycle for agent-to-agent
+   communication (see the two sections above) — now unblocked, not started.~~ —
+   **done, 2026-07-06 v8 session: design spec written, plan written, fully
+   implemented and tested. See entry below.**
 2. Everything from this entire multi-session engagement (~60+ files: the
    documentation overhaul, the audit fixes, the policy layer spec/plan/
    implementation) is **staged/modified but not committed** — standing
@@ -626,3 +628,181 @@ concurrency test):**
 **Not re-litigated, correctly left alone:** items 1 and 2 above remain
 open user decisions — see those two entries; nothing in this session's
 work started the agent-to-agent brainstorm or committed anything.
+
+## 2026-07-06 — Agent-to-agent communication: implemented and tested (v8 session, same day)
+
+Item 1 above closed out in full: design spec
+(`docs/superpowers/specs/2026-07-06-agent-to-agent-communication-design.md`,
+written in a prior same-day session, "Approved (pending final spec
+review)") was carried through a `superpowers:writing-plans` plan
+(`docs/superpowers/plans/2026-07-06-agent-to-agent-communication.md`) and
+fully implemented this session, task by task, TDD-style. Every task's
+`go build`/`go vet`/`go test` gate was run for real before moving to the
+next — not claimed without running, per this repo's own anti-cheating
+policy (08.1).
+
+**What shipped, additive only, zero behavior change when unused:**
+- `internal/agent/registry.go` — `RegistryEntry{Name, Description, CardURL}`
+  + `LoadRegistry(path) ([]RegistryEntry, error)`, a YAML-list loader
+  mirroring `secondbrain.Load`'s style. 4 tests.
+- `internal/agent/agentcomm.go` — `BuildAgentTools(entries) (tools []tool.Tool, warnings []string)`
+  wraps each valid entry as `agenttool.New(remoteagent.NewA2A(...), nil)`.
+  Per-entry failures (empty name, empty/unparseable `card_url`, construction
+  error) are warnings, never fatal. 5 unit tests (no network) plus one real
+  end-to-end test, `TestBuildAgentTools_InvokesRealAgentOverA2AWireProtocol`,
+  that stands up a real `httptest.Server` serving a real `a2a.AgentCard` +
+  a real JSON-RPC responder (via `a2asrv.NewHandler`/`NewJSONRPCHandler`,
+  not a hand-rolled encoder) and drives the resulting tool through a real
+  ADK `runner.Run` — a genuine wire-protocol round trip, not a mock. This
+  exact composition (`AgentCardProvider` + `agentcard.DefaultResolver` HTTP
+  fetch, driven through a real runner) had no precedent in ADK's own test
+  suite; it passed on the first real attempt because the `adk-api-verifier`
+  subagent was dispatched beforehand to read the actual ADK/a2a-go v2.3.1
+  source rather than guessing the wire format.
+- `internal/agent/root.go` — `NewRootAgent` gained a 4th param,
+  `agentTools []tool.Tool`, merged into `llmagent.Config.Tools`; `nil`
+  reproduces the exact prior construction. 1 new test
+  (`TestNewRootAgent_AcceptsNonNilAgentToolsWithoutError`), 1 existing test
+  updated for the new call signature.
+- `cmd/agentic-hooks/run.go` — new optional `--agents-config` flag (no
+  default, matches the `--policy-file`-is-different-because-it-has-a-default
+  precedent), wired through a new extracted helper `loadAgentTools` (same
+  extraction pattern as the existing `promptForApprovalAndRecordFeedback`)
+  so the flag's logic is unit-testable without a live model. 4 new tests.
+- `github.com/a2aproject/a2a-go/v2@v2.3.1` pinned as a direct dependency
+  (`go get` + `go mod tidy`); `google.golang.org/adk/v2` stayed at `v2.0.0`
+  (already the pinned version, nothing to bump).
+- `docs/adr/0010-network-a2a-via-adk-remoteagent.md` (new) supersedes
+  ADR-0001's "no network-based A2A this iteration" consequence for the
+  tool-calling delegation path specifically — in-process `SubAgents`
+  delegation (Search, loop) is untouched and remains primary. ADR-0001 and
+  `MEMORY.md` both cross-reference it.
+- `docs/reference/cli.md` updated with the real `--help` output and a new
+  table row for `--agents-config`.
+
+**One corrected detail from the approved design spec** (re-verified
+against actual source, not assumed): the spec's draft well-known path was
+`/.well-known/agent.json`. The real path, per
+`a2aclient/agentcard/resolver.go` in `a2a-go/v2@v2.3.1` (confirmed against
+that package's own `resolver_test.go`), is
+**`/.well-known/agent-card.json`**. `remoteagent.NewAgentCardProvider`
+takes a bare base URL, not a path — this project's `BuildAgentTools`
+passes `e.CardURL` unmodified, which is correct; only the *test fixture's*
+mux route needed the corrected path.
+
+**One deliberate deviation from the spec's sketch:** `BuildAgentTools`
+drops the spec's sketched trailing `err error` return. Nothing in the
+spec's own Error Handling section ever produces a registry-wide fatal
+error once `LoadRegistry` has already succeeded (per-entry failures are
+warnings) — an always-nil third return would be dead code. Noted up front
+in the plan file, not a silent change.
+
+**Test counts:** `internal/agent` package went from 14 to 24 tests (all
+passing); `cmd/agentic-hooks` gained 4 (`TestLoadAgentTools_*`, all
+passing). Full-repo `make check` (`go vet ./...`, `go test ./...`,
+`go build`) ran clean at the end, including every pre-existing package
+(`internal/feedback`, `internal/mcpserver`, `internal/secondbrain`) —
+nothing outside the touched files regressed. `git diff` on `root.go` and
+`run.go` was inspected directly to confirm the change is exactly the
+additive signature/flag change the plan called for, no incidental logic
+changes.
+
+**Not done, not asked for this session:** committing any of this (item 2
+above, standing no-commit instruction, still applies — everything is
+modified/untracked, nothing staged or committed); wiring a real remote
+agent (e.g. `pwdev-mcp`) into `--agents-config` as a live entry (explicitly
+out of scope per the design spec, gated on that sibling repo's own
+`a2a-go` version decision).
+
+## 2026-07-07 — Structural facts (tree-sitter): design approved and fully
+## verified, plan NOT yet written, PENDING for next session
+
+User asked for a feature "exact like" GitNexus and Graphify (both real,
+verified directly, not guessed — GitNexus: Node/TS, tree-sitter → embedded
+graph DB (LadybugDB) → 17 MCP tools; Graphify: Python, tree-sitter →
+`graph.json`/`graph.html`, `EXTRACTED`/`INFERRED` edge tags). Both are
+full standalone code-knowledge-graph products — far bigger than one
+feature. Scoped down via direct clarifying questions to: **feed the
+existing Review agent's already-reserved `structuralFacts` seam** only
+(`internal/agent/review.go`'s `BuildReviewPrompt(diff, brain, facts)`,
+`facts *StructuralFacts` — currently the empty `struct{}`, always `nil` at
+every call site). No graph DB, no new MCP tools, no visualization, Go-only.
+
+**This reopens ADR-0007** ("Tree-sitter-based structural analysis is
+deferred... explicit user decision, not an oversight") — user-confirmed
+reopening this session, same pattern as ADR-0010's A2A reopening.
+
+**Design spec written and self-reviewed** (not committed — standing
+no-commit instruction, and the user separately said explicitly this
+session: do not touch git at all without an explicit ask):
+`docs/superpowers/specs/2026-07-07-structural-facts-tree-sitter-design.md`.
+
+**New fact vs. ADR-0007's original CGo assumption**, verified directly,
+not assumed: `tree-sitter/go-tree-sitter@v0.25.0` and `smacker/go-tree-sitter`
+are both **still CGo-based** (confirmed via `grep "import \"C\""` on their
+fetched source — ADR-0007's original blocker still holds for those two).
+But `github.com/odvcencio/gotreesitter` — which did not exist when
+ADR-0007 was written — is a genuine **pure-Go** tree-sitter runtime, no
+CGo, no C toolchain. Verified real via `gh api`: MIT license, 527 stars,
+created 2026-02-20, last pushed 2026-07-06, not archived, ships a Go
+grammar (`grammars.GoLanguage()`). This changes ADR-0007's calculus for
+this specific, narrow use case.
+
+**API fully verified this session by actually running a probe program**
+(not just `go doc` — real parse output), in a scratch module at
+`/private/tmp/.../scratchpad/gts-probe/` (not part of this repo, throwaway):
+- `gotreesitter.NewParser(grammars.GoLanguage()).Parse(source []byte) (*Tree, error)`.
+- Function/method boundary node types, **confirmed via real `.SExpr()` output**:
+  `function_declaration` and `method_declaration`. Name for both
+  (including a method's receiver form) comes from
+  `node.ChildByFieldName("name", lang).Text(source)` — confirmed this
+  resolves correctly for `method_declaration` too (its name is a
+  `field_identifier` child under the `"name"` field), not just plain funcs.
+- Nesting-construct node types, **all 5 confirmed via a real parse
+  containing `if`/`for`/`switch`/type-switch/`select`**:
+  `if_statement`, `for_statement`, `expression_switch_statement`,
+  `type_switch_statement`, `select_statement`.
+- `Node.StartPoint()/EndPoint()` give `Point{Row, Column}`, 0-indexed rows
+  (add 1 for human-readable line numbers) — confirmed against known source
+  line numbers in the probe.
+- A syntactically valid probe file parsed with `root.HasError() == false`
+  as expected — the error-detection path (`HasError() == true` on
+  malformed input) was **not yet exercised this session** — do this first
+  when implementation resumes, before trusting the fail-open path in the
+  design.
+
+**Full design, including the exact `AnalyzeStructuralFacts` function
+signature, `FunctionFacts`/`StructuralFacts` struct shapes, data-flow
+wiring into `newReviewInstructionProvider`/`BuildReviewPrompt`, error
+handling, and test list** is in the spec file above — do not re-derive it,
+read that file first.
+
+**Genuinely not done yet, pending for next session:**
+1. `superpowers:writing-plans` was invoked (skill loaded) but the actual
+   plan file (`docs/superpowers/plans/2026-07-07-structural-facts-tree-sitter.md`
+   or similar) was **not yet written** — paused here per a cost-critical
+   flag (session hit ~$51.50) and the user's own request to checkpoint
+   `SESSION_HANDOFF.md` before continuing.
+2. No code written for this feature yet — `internal/agent/structuralfacts.go`
+   does not exist in this repo yet (only in the throwaway scratch probe).
+3. `docs/adr/0011-go-structural-facts-via-gotreesitter.md` not yet
+   written (planned per the spec's Documentation section).
+4. **Verify `HasError()` actually returns `true` on malformed Go input**
+   before relying on it in the implementation — only the happy path was
+   exercised this session.
+5. A separate, still-open request from the same session: create a
+   Claude Code skill (via `skill-creator`) for this project, **and**
+   separately scope an ADK-agent-loadable skill (agentskills.io spec,
+   consumed via ADK's `tool/skilltoolset`) — user said "both," but flagged
+   that this repo already has 5 project skills in `.claude/skills/`
+   (`agentic-hooks-dev-loop`, `adk-v2-verification`, `mcp-server-development`,
+   `second-brain-authoring`, `llm-agent-quality`) that likely already cover
+   the obvious "how to work on this repo" ground — what NEW skill content
+   is actually wanted still needs to be clarified with the user before
+   building anything here. Do not guess and build something redundant
+   with those 5.
+
+**Resume point:** re-read the spec file, then continue
+`superpowers:writing-plans` for the structural-facts feature (verify
+`HasError()` on bad input as the first plan step, before any other code),
+then separately re-open the skill-scoping question (item 5) with the user.

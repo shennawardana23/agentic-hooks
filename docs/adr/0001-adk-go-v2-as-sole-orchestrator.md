@@ -27,6 +27,10 @@ agent delegation). Genkit is not added to the request path.
 - One orchestration framework, one tracing/config surface, no duplicated
   agent/session/tool model.
 - Sub-agent delegation (Search, Generator, Review) is in-process ADK
-  delegation only — no network-based A2A this iteration.
+  delegation only — no network-based A2A this iteration. **Superseded
+  2026-07-06** for the tool-calling delegation path specifically: see
+  [ADR-0010](0010-network-a2a-via-adk-remoteagent.md). In-process
+  `SubAgents` delegation remains unchanged and is still the primary
+  orchestration mechanism.
 - Genkit is still useful elsewhere in the project (see ADR-0002) but never
   runs inline during a `run` invocation.

@@ -17,6 +17,7 @@ import (
 	"google.golang.org/adk/v2/plugin/retryandreflect"
 	"google.golang.org/adk/v2/runner"
 	"google.golang.org/adk/v2/session"
+	"google.golang.org/adk/v2/tool"
 	"google.golang.org/genai"
 
 	myagent "agentic-hooks/internal/agent"
@@ -117,12 +118,35 @@ func promptForApprovalAndRecordFeedback(out io.Writer, in *bufio.Reader, feedbac
 	return approved
 }
 
+// loadAgentTools loads the optional --agents-config registry and builds
+// the resulting tool.Tool set, printing any per-entry warnings to out. An
+// empty path is a no-op (nil tools, no error, no output) — this is the
+// default, --agents-config-absent behavior, and must reproduce today's
+// exact root-agent construction.
+func loadAgentTools(path string, out io.Writer) ([]tool.Tool, error) {
+	if path == "" {
+		return nil, nil
+	}
+
+	entries, err := myagent.LoadRegistry(path)
+	if err != nil {
+		return nil, err
+	}
+
+	tools, warnings := myagent.BuildAgentTools(entries)
+	for _, w := range warnings {
+		fmt.Fprintf(out, "warning: %s\n", w)
+	}
+	return tools, nil
+}
+
 func newRunCmd() *cobra.Command {
 	var knowledgeDir string
 	var mcpCommand string
 	var mcpArgs []string
 	var maxIterations uint
 	var feedbackDir string
+	var agentsConfigPath string
 
 	cmd := &cobra.Command{
 		Use:   "run [task]",
@@ -158,7 +182,12 @@ func newRunCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			root, err := myagent.NewRootAgent(search, loop, m)
+			agentTools, err := loadAgentTools(agentsConfigPath, cmd.OutOrStdout())
+			if err != nil {
+				return err
+			}
+
+			root, err := myagent.NewRootAgent(search, loop, m, agentTools)
 			if err != nil {
 				return err
 			}
@@ -186,6 +215,7 @@ func newRunCmd() *cobra.Command {
 	cmd.Flags().StringSliceVar(&mcpArgs, "search-mcp-server-args", nil, "comma-separated arguments passed to --search-mcp-server")
 	cmd.Flags().UintVar(&maxIterations, "max-iterations", defaultMaxIterations, "max generate/review passes before the loop returns its best-effort draft")
 	cmd.Flags().StringVar(&feedbackDir, "feedback-dir", "feedback", "directory for the append-only human-feedback JSONL log")
+	cmd.Flags().StringVar(&agentsConfigPath, "agents-config", "", "optional path to a YAML registry of remote agents to expose as tools (see internal/agent.RegistryEntry)")
 	cmd.MarkFlagRequired("knowledge-dir")
 	cmd.MarkFlagRequired("search-mcp-server")
 

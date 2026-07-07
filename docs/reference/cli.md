@@ -44,6 +44,7 @@ Usage:
   agentic-hooks run [task] [flags]
 
 Flags:
+      --agents-config string             optional path to a YAML registry of remote agents to expose as tools (see internal/agent.RegistryEntry)
       --feedback-dir string              directory for the append-only human-feedback JSONL log (default "feedback")
   -h, --help                             help for run
       --knowledge-dir string             path to the Second Brain knowledge directory (required)
@@ -60,6 +61,7 @@ Flags:
 | `--search-mcp-server-args` | comma-separated string list | none | no | Args passed to `--search-mcp-server`. Example: `"serve,--knowledge-dir,knowledge"`. |
 | `--max-iterations` | uint | `4` | no | Bound on Generator↔Review passes (`internal/agent.NewSelfCorrectingLoop`). |
 | `--feedback-dir` | string | `"feedback"` | no | Directory for the append-only `feedback.jsonl` HITL log. |
+| `--agents-config` | string | none | no | Path to a YAML list of `{name, description, card_url}` remote-agent registry entries (`internal/agent.RegistryEntry`). Each valid entry becomes a tool the root agent's LLM can call over real A2A (`internal/agent.BuildAgentTools`, `google.golang.org/adk/v2/agent/remoteagent/v2` + `tool/agenttool`). Omitted entirely: zero behavior change. See [ADR-0010](../adr/0010-network-a2a-via-adk-remoteagent.md). |
 
 Reads `GEMINI_API_KEY` env var (falls back to `GOOGLE_API_KEY` via the
 underlying `genai` client, even though `cmd/agentic-hooks/run.go` only

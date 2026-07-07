@@ -15,6 +15,14 @@ Full decision rationale for each: [docs/adr/](docs/adr/).
 - **Runtime**: ADK Go v2 (`google.golang.org/adk/v2`) is the sole
   request-path orchestrator. Genkit is never added to the request path.
   ([docs/adr/0001](docs/adr/0001-adk-go-v2-as-sole-orchestrator.md))
+- **Network A2A (opt-in, additive)**: the root agent can delegate to
+  external agents over the real A2A protocol via `agent/remoteagent/v2` +
+  `tool/agenttool`, driven by a static YAML registry
+  (`--agents-config`, no default — omitted means zero behavior change).
+  This supersedes ADR-0001's original "no network A2A" consequence for
+  the tool-calling path only; in-process `SubAgents` delegation is
+  unaffected.
+  ([docs/adr/0010](docs/adr/0010-network-a2a-via-adk-remoteagent.md))
 - **Genkit's only role**: offline eval (LLM-as-judge over exported ADK
   session traces), never inline.
   ([docs/adr/0002](docs/adr/0002-offline-eval-as-plain-go-harness.md))
